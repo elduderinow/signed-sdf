@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // A stray package-lock.json in /home/yarrut otherwise wins workspace detection.
+  turbopack: { root: __dirname },
 };
 
 export default nextConfig;

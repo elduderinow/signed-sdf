@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# signed-sdf
 
-## Getting Started
+A raymarched signed-distance-field scene rendered with three.js on the
+**WebGPURenderer**. The original was a GLSL `ShaderMaterial` from the 2024
+portfolio; the whole march, lighting and colour blend have been rewritten in
+TSL so they compile to WGSL.
 
-First, run the development server:
+Drag to orbit. Double click to drop a sphere into the field.
+
+## What it does
+
+A full-screen quad is pinned to the camera's near plane and oriented with the
+camera, so every pixel is a primary ray. `rayMarch` steps along that ray against
+a scene built from a smooth union of up to 20 spheres, a revolved 2D cross and
+a box. Normals come from the usual tetrahedral sampling of the distance field,
+and surface colour is an exponentially weighted blend of every contributing
+primitive rather than a hard pick, which is what keeps the joins from banding.
+
+## How the port differs
+
+- The GLSL read its step count from a uniform. TSL wants a literal `Loop` bound,
+  so the count is fixed at 100 and the march exits early through `Break`.
+- The post chain from the original (N8AO, ACES tone mapping) is gone. It does
+  not run on `WebGPURenderer`, and the raymarcher does its own lighting.
+- The HDR environment is gone too. Nothing in the shader ever sampled it.
+- TSL's generated typings are nominal, so node types are threaded through a
+  loose alias inside `src/components/sdf.ts`. The node system validates the
+  graph at build time instead.
+
+## Requirements
+
+WebGPU. The page shows a notice on browsers without `navigator.gpu`.
+
+## Develop
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
