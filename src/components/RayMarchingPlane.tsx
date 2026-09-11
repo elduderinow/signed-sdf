@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { MeshBasicNodeMaterial } from "three/webgpu";
-import { uv } from "three/tsl";
+import { positionGeometry, uv, vec4 } from "three/tsl";
 import { MAX_SPHERES, buildColorNode, createUniforms, setSphere } from "./sdf";
 
 /** Project a normalised pointer position onto a plane `depth` units ahead. */
@@ -26,7 +26,6 @@ function randomColor() {
 
 export default function RayMarchingPlane() {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
-  const planeRef = useRef<THREE.Mesh>(null);
 
   const pointer = useRef({ x: 0, y: 0 });
   const sphereCount = useRef(0);
@@ -36,6 +35,19 @@ export default function RayMarchingPlane() {
     const u = createUniforms();
     const m = new MeshBasicNodeMaterial();
     m.colorNode = buildColorNode(u, uv());
+
+    // The quad only carries fragments. Every ray is rebuilt in the shader from
+    // the camera uniforms, so the geometry is written straight to clip space
+    // rather than pinned to the camera's near plane the way the GLSL original
+    // did it. WebGPU clips depth against [0, 1], and a quad sitting exactly on
+    // the near plane sits exactly on that boundary, so rounding decided
+    // frame by frame whether it survived: a still camera showed the clear
+    // colour and a moving one flickered.
+    // planeGeometry spans [-0.5, 0.5], so doubling it covers NDC.
+    m.vertexNode = vec4(positionGeometry.xy.mul(2), 0, 1);
+    m.depthTest = false;
+    m.depthWrite = false;
+
     return { material: m, uniforms: u };
   }, []);
 
@@ -72,22 +84,7 @@ export default function RayMarchingPlane() {
     return () => window.removeEventListener("dblclick", addSphere);
   }, [addSphere]);
 
-  const forward = useRef(new THREE.Vector3());
-
   useFrame(() => {
-    const plane = planeRef.current;
-    if (!plane) return;
-
-    // Keep the quad pinned to the camera's near plane, filling the frustum.
-    const height = camera.near * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 2;
-    plane.scale.set(height * camera.aspect, height, 1);
-
-    camera.getWorldDirection(forward.current);
-    plane.position
-      .copy(camera.position)
-      .add(forward.current.multiplyScalar(camera.near));
-    plane.quaternion.copy(camera.quaternion);
-
     uniforms.camPos.value.copy(camera.position);
     uniforms.camToWorldMat.value.copy(camera.matrixWorld);
     uniforms.camInvProjMat.value.copy(camera.projectionMatrixInverse);
@@ -98,7 +95,7 @@ export default function RayMarchingPlane() {
   });
 
   return (
-    <mesh ref={planeRef} material={material} frustumCulled={false}>
+    <mesh material={material} frustumCulled={false} renderOrder={-1}>
       <planeGeometry />
     </mesh>
   );
