@@ -54,12 +54,15 @@ export default function RayMarchingPlane() {
   useEffect(() => () => material.dispose(), [material]);
 
   useEffect(() => {
-    const onMove = (e: PointerEvent) => {
+    // mousemove, not pointermove, matching the original. pointermove also fires
+    // through a touch drag, so on a phone the same gesture that orbits the
+    // camera would also drag the cursor-tracking sphere across the field.
+    const onMove = (e: MouseEvent) => {
       pointer.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       pointer.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
-    window.addEventListener("pointermove", onMove);
-    return () => window.removeEventListener("pointermove", onMove);
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
   /** Double click drops a sphere at the cursor, up to the shader's array size. */
