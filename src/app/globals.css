@@ -53,3 +53,17 @@ canvas {
   pointer-events: none;
   user-select: none;
 }
+
+/* Which GPU backend actually started. Useful when debugging on a phone, where
+   there is no console to check. */
+.backend {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}

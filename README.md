@@ -27,9 +27,17 @@ primitive rather than a hard pick, which is what keeps the joins from banding.
   loose alias inside `src/components/sdf.ts`. The node system validates the
   graph at build time instead.
 
-## Requirements
+## Renderers
 
-WebGPU. The page shows a notice on browsers without `navigator.gpu`.
+`WebGPURenderer` with a WebGL 2 fallback. The raymarcher is TSL nodes, so the
+same graph compiles to WGSL or GLSL depending on which backend starts, and the
+scene is identical either way. When `navigator.gpu` is missing the WebGL
+backend is requested directly; when WebGPU exists but fails to initialise,
+three's own fallback catches it. A small label in the corner shows which
+backend won.
+
+This matters for older iPhones and any Android without WebGPU, which would
+otherwise get a dead end.
 
 ## Develop
 
