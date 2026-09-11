@@ -40,12 +40,15 @@ export default function SdfScene() {
         return renderer;
       }}
     >
+      {/* The original set dollySpeed={0} and clamped 2..10, so wheel and pinch
+          did nothing. Zoom is wanted here, so dolly is on and the far clamp is
+          wider. The camera starts at 5. */}
       <CameraControls
         makeDefault
         minDistance={2}
-        maxDistance={10}
+        maxDistance={20}
         dampingFactor={0.1}
-        dollySpeed={0}
+        dollySpeed={1}
         truckSpeed={1}
       />
       <RayMarchingPlane />
